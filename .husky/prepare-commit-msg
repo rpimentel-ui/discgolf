@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# This way you can customize which branches should be skipped when
+# prepending commit message. 
+if [ -z "$BRANCHES_TO_SKIP" ]; then
+  # Add any other branch names that should be ingored
+  BRANCHES_TO_SKIP=(master MASTER develop DEVELOP test TEST stage STAGE)
+fi
+
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+#Convert branch name to uppercase
+BRANCH=`echo $BRANCH | tr 'a-z' 'A-Z'`
+
+BRANCH_EXCLUDED=$(printf "%s\n" "${BRANCHES_TO_SKIP[@]}" | grep -c "^$BRANCH$")
+FILE_CONTENT="$(cat $1)"
+
+# Check if current branch name is part of the exluded branches
+if [[ $BRANCH_EXCLUDED -eq 1 ]]; then
+  exit
+fi
+
+if [ $2 = "message" ]; then
+  # Branches created from a Jira ticket will get appened as "Generic commit message (PROJECTCODE-ID)"
+  echo $FILE_CONTENT "("$BRANCH")" > $1
+else
+  # If branch is found in the skip array, the entered commit message will be saved "Generic commit message"
+  echo $BRANCH: > $1
+  echo $FILE_CONTENT >> $1
+fi
